@@ -1,8 +1,17 @@
 import SwiftUI
 
 struct ArrayPlanetView: View {
-    @State private var planets: [String] = ["Mercury", "Venus", "Earth", "Mars", "Jupiter"]
-    @State private var selectedIndex: Int = 0
+    @State private var planets = [
+        (name: "Mercury", image: "mercury"),
+        (name: "Venus", image: "venus"),
+        (name: "Earth", image: "earth"),
+        (name: "Mars", image: "mars"),
+        (name: "Jupiter", image: "jupiter"),
+        (name: "Saturn", image: "saturn"),
+        (name: "Uranus", image: "uranus"),
+        (name: "Neptune", image: "neptune")
+    ]
+    @State private var selectedPlanetIndex: Int?
     @State private var showExplanation = true
     @State private var newPlanet: String = ""
     
@@ -20,19 +29,23 @@ struct ArrayPlanetView: View {
                         .foregroundColor(.white)
                 }
                 
-                Text("Current Index: \(selectedIndex)")
+                Text("Current Index: \(selectedPlanetIndex ?? 0)")
                     .foregroundColor(.white)
                     .font(.title3)
                 
                 ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 15) {
-                        ForEach(0..<planets.count, id: \.self) { index in
-                            PlanetCard(name: planets[index], isSelected: index == selectedIndex)
-                                .onTapGesture {
-                                    withAnimation {
-                                        selectedIndex = index
-                                    }
+                    HStack(spacing: 20) {
+                        ForEach(planets.indices, id: \.self) { index in
+                            PlanetCard(
+                                name: planets[index].name,
+                                imageName: planets[index].image,
+                                isSelected: selectedPlanetIndex == index
+                            )
+                            .onTapGesture {
+                                withAnimation {
+                                    selectedPlanetIndex = index
                                 }
+                            }
                         }
                     }
                     .padding()
@@ -47,7 +60,7 @@ struct ArrayPlanetView: View {
                         Button("Add Planet") {
                             withAnimation {
                                 if !newPlanet.isEmpty {
-                                    planets.append(newPlanet)
+                                    planets.append((name: newPlanet, image: ""))
                                     newPlanet = ""
                                 }
                             }
@@ -59,7 +72,7 @@ struct ArrayPlanetView: View {
                         withAnimation {
                             if !planets.isEmpty {
                                 planets.removeLast()
-                                selectedIndex = min(selectedIndex, planets.count - 1)
+                                selectedPlanetIndex = min(selectedPlanetIndex ?? 0, planets.count - 1)
                             }
                         }
                     }
@@ -122,22 +135,28 @@ struct ArrayPlanetView: View {
 
 struct PlanetCard: View {
     let name: String
+    let imageName: String
     let isSelected: Bool
     
     var body: some View {
-        Text(name)
-            .font(.system(size: 20, weight: .medium))
-            .foregroundColor(.white)
-            .padding()
-            .frame(width: 120, height: 120)
-            .background(
-                RoundedRectangle(cornerRadius: 15)
-                    .fill(isSelected ? Color.purple : Color.gray.opacity(0.3))
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 15)
-                    .stroke(Color.purple, lineWidth: isSelected ? 2 : 0)
-            )
+        VStack {
+            Image(imageName)
+                .resizable()
+                .scaledToFit()
+                .frame(width: 100, height: 100)
+                .overlay(
+                    Circle()
+                        .stroke(isSelected ? Color.orange : Color.clear, lineWidth: 3)
+                )
+            
+            Text(name)
+                .font(.system(size: 16, weight: .medium))
+                .foregroundColor(.white)
+        }
+        .padding()
+        .background(
+            RoundedRectangle(cornerRadius: 15)
+                .fill(Color.black.opacity(0.3))
+        )
     }
-} 
 } 
