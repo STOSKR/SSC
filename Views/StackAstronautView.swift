@@ -36,8 +36,7 @@ struct StackAstronautView: View {
                 VStack(spacing: 15) {
                     HStack {
                         TextField("New astronaut name", text: $newAstronaut)
-                            .textFieldStyle(RoundedBorderTextFieldStyle())
-                            .foregroundColor(.white)
+                            .textFieldStyle(SpaceTextFieldStyle())
                         
                         Button("Push") {
                             withAnimation(.spring(response: 0.5, dampingFraction: 0.8)) {
@@ -47,7 +46,7 @@ struct StackAstronautView: View {
                                 }
                             }
                         }
-                        .disabled(newAstronaut.isEmpty)
+                        .buttonStyle(SpaceButtonStyle(color: .cyan, isDisabled: newAstronaut.isEmpty))
                     }
                     
                     Button("Pop") {
@@ -57,7 +56,7 @@ struct StackAstronautView: View {
                             }
                         }
                     }
-                    .disabled(astronauts.isEmpty)
+                    .buttonStyle(SpaceButtonStyle(color: .red, isDisabled: astronauts.isEmpty))
                 }
                 .padding()
                 

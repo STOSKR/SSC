@@ -36,8 +36,7 @@ struct QueueSpaceshipView: View {
                 VStack(spacing: 15) {
                     HStack {
                         TextField("New spaceship name", text: $newSpaceship)
-                            .textFieldStyle(RoundedBorderTextFieldStyle())
-                            .foregroundColor(.white)
+                            .textFieldStyle(SpaceTextFieldStyle())
                         
                         Button("Enqueue") {
                             withAnimation {
@@ -47,7 +46,7 @@ struct QueueSpaceshipView: View {
                                 }
                             }
                         }
-                        .disabled(newSpaceship.isEmpty)
+                        .buttonStyle(SpaceButtonStyle(color: .green, isDisabled: newSpaceship.isEmpty))
                     }
                     
                     Button("Dequeue") {
@@ -57,7 +56,7 @@ struct QueueSpaceshipView: View {
                             }
                         }
                     }
-                    .disabled(spaceships.isEmpty)
+                    .buttonStyle(SpaceButtonStyle(color: .red, isDisabled: spaceships.isEmpty))
                 }
                 .padding()
                 

@@ -73,8 +73,7 @@ struct LinkedListStarsView: View {
                 VStack(spacing: 15) {
                     HStack {
                         TextField("New star name", text: $newStarName)
-                            .textFieldStyle(RoundedBorderTextFieldStyle())
-                            .foregroundColor(.white)
+                            .textFieldStyle(SpaceTextFieldStyle())
                         
                         Button("Add Star") {
                             withAnimation {
@@ -84,7 +83,7 @@ struct LinkedListStarsView: View {
                                 }
                             }
                         }
-                        .disabled(newStarName.isEmpty)
+                        .buttonStyle(SpaceButtonStyle(color: .purple, isDisabled: newStarName.isEmpty))
                     }
                     
                     Button("Remove Current Star") {
@@ -92,7 +91,7 @@ struct LinkedListStarsView: View {
                             removeCurrentStar()
                         }
                     }
-                    .disabled(currentStar == nil)
+                    .buttonStyle(SpaceButtonStyle(color: .red, isDisabled: currentStar == nil))
                 }
                 .padding()
                 
