@@ -10,25 +10,33 @@ struct ContentView: View {
     
     var body: some View {
         GeometryReader { geometry in
-            HStack(spacing: 0) {
-                // Home View
-                HomeView(selectedStructure: $selectedStructure)
-                    .frame(width: homeWidth == .zero ? geometry.size.width : homeWidth)
-                    .animation(.spring(), value: homeWidth)
+            ZStack {
+                // Fondo con estrellas que siempre ocupa toda la pantalla
+                Color.black.ignoresSafeArea()
+                StarField(starsCount: 300)
+                    .opacity(0.7)
+                    .ignoresSafeArea()
                 
-                // Detail View
-                if let structure = selectedStructure {
-                    structureView(for: structure)
-                        .frame(
-                            width: geometry.size.width - homeWidth,
-                            height: geometry.size.height
-                        )
-                        .transition(.move(edge: .trailing))
-                        .background(Color.black)
+                // Contenido que se ajusta
+                HStack(spacing: 0) {
+                    // Home View
+                    HomeView(selectedStructure: $selectedStructure)
+                        .frame(width: homeWidth == .zero ? geometry.size.width : homeWidth)
+                        .animation(.spring(), value: homeWidth)
+                    
+                    // Detail View
+                    if let structure = selectedStructure {
+                        structureView(for: structure)
+                            .frame(
+                                width: geometry.size.width - homeWidth,
+                                height: geometry.size.height
+                            )
+                            .transition(.move(edge: .trailing))
+                            .background(Color.black.opacity(0.01)) // Fondo transparente
+                    }
                 }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .background(Color.black)
             .onAppear {
                 homeWidth = geometry.size.width
             }
