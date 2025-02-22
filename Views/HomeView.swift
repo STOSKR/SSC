@@ -148,7 +148,8 @@ extension Collection {
 }
 
 struct HomeView: View {
-    @Binding var selectedStructure: ContentView.DataStructure?
+    @Binding var selectedStructure: DataStructure?
+    @Binding var completedStructures: Set<DataStructure>
     
     private let dataStructures: [(title: String, icon: String, subtitle: String, color: Color)] = [
         ("Arrays", "solar-system", "Sequential Collection", .orange),
@@ -200,7 +201,8 @@ struct HomeView: View {
                                 subtitle: item.subtitle,
                                 icon: item.icon,
                                 color: item.color,
-                                isSelected: selectedStructure == getStructure(for: item.title)
+                                isSelected: selectedStructure == getStructure(for: item.title),
+                                isCompleted: completedStructures.contains(getStructure(for: item.title)!)
                             ) {
                                 withAnimation(.spring(response: 0.5, dampingFraction: 0.8)) {
                                     selectedStructure = getStructure(for: item.title)
@@ -224,15 +226,15 @@ struct HomeView: View {
             subtitle: item.subtitle,
             icon: item.icon,
             color: item.color,
-            isSystemIcon: false
-        ) {
-            withAnimation(.spring(response: 0.5, dampingFraction: 0.8)) {
-                selectedStructure = getStructure(for: item.title)
+            action: {
+                withAnimation(.spring(response: 0.5, dampingFraction: 0.8)) {
+                    selectedStructure = getStructure(for: item.title)
+                }
             }
-        }
+        )
     }
     
-    private func getStructure(for title: String) -> ContentView.DataStructure? {
+    private func getStructure(for title: String) -> DataStructure? {
         switch title {
         case "Arrays": return .arrays
         case "Linked Lists": return .linkedLists
@@ -250,6 +252,7 @@ struct CompactDataStructureCard: View {
     let icon: String
     let color: Color
     let isSelected: Bool
+    let isCompleted: Bool
     let action: () -> Void
     
     var body: some View {
@@ -259,11 +262,12 @@ struct CompactDataStructureCard: View {
                     .resizable()
                     .scaledToFit()
                     .frame(width: 40, height: 40)
+                    .opacity(isCompleted ? 1 : 0.5)
                 
                 VStack(alignment: .leading) {
                     Text(title)
                         .font(.headline)
-                        .foregroundColor(.white)
+                        .foregroundColor(isCompleted ? .white : .gray)
                     
                     Text(subtitle)
                         .font(.subheadline)
@@ -283,5 +287,7 @@ struct CompactDataStructureCard: View {
                     .stroke(isSelected ? color : color.opacity(0.5), lineWidth: isSelected ? 2 : 1)
             )
         }
+        .disabled(!isCompleted)
+        .opacity(isCompleted ? 1 : 0.6)
     }
 }
