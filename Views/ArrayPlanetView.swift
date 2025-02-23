@@ -1,14 +1,14 @@
-import SwiftUI
+    import SwiftUI
 
-struct PlanetOption: Identifiable, Equatable {
-    let id = UUID()
-    let name: String
-    let image: String
-    let order: Int
-    
-    // Eliminamos la implementación explícita de Equatable ya que Swift puede
-    // generar automáticamente la implementación correcta para todas las propiedades
-}
+    struct PlanetOption: Identifiable, Equatable {
+        let id = UUID()
+        let name: String
+        let image: String
+        let order: Int
+        
+        // Eliminamos la implementación explícita de Equatable ya que Swift puede
+        // generar automáticamente la implementación correcta para todas las propiedades
+    }
 
     struct ArrayPlanetView: View {
         @State private var planets: [PlanetOption] = []
@@ -19,6 +19,8 @@ struct PlanetOption: Identifiable, Equatable {
         @State private var showHint = false
         @State private var showError = false
         @State private var errorMessage = ""
+        @State private var maxLevelReached = 1
+        @State private var selectedAvailablePlanets: Set<UUID> = []
         
         init() {
             let allPlanets = [
@@ -39,88 +41,125 @@ struct PlanetOption: Identifiable, Equatable {
             ZStack {
                 Color.black.ignoresSafeArea()
                 
-                VStack(spacing: 20) {
-                    Text("Level \(currentLevel)")
-                        .font(.system(size: 32, weight: .bold))
-                        .foregroundColor(.white)
-                    
-                    levelInstructions
-                    
-                    // Available planets
-                    VStack(alignment: .leading) {
-                        Text("Available Planets:")
-                            .font(.title3)
-                            .foregroundColor(.white)
-                        
-                        ScrollView(.horizontal, showsIndicators: false) {
-                            HStack(spacing: 20) {
-                                ForEach(availablePlanets) { planet in
-                                    PlanetCard(
-                                        name: planet.name,
-                                        imageName: planet.image,
-                                        isSelected: false
-                                    )
-                                    .onTapGesture {
-                                        handlePlanetTap(planet)
-                                    }
-                                }
+                ScrollView {
+                    VStack(spacing: 15) {
+                        // Level navigation
+                        HStack {
+                            Button(action: { changeLevel(decrease: true) }) {
+                                Image(systemName: "chevron.left.circle.fill")
+                                    .font(.system(size: 24))
                             }
-                            .padding()
-                        }
-                    }
-                    
-                    // Current array
-                    VStack(alignment: .leading) {
-                        Text("Your Solar System:")
-                            .font(.title3)
-                            .foregroundColor(.white)
-                        
-                        ScrollView(.horizontal, showsIndicators: false) {
-                            HStack(spacing: 20) {
-                                ForEach(Array(planets.enumerated()), id: \.element.id) { index, planet in
-                                    PlanetCard(
-                                        name: planet.name,
-                                        imageName: planet.image,
-                                        isSelected: selectedPlanetIndex == index
-                                    )
-                                    .onTapGesture {
-                                        handleSelectionTap(at: index)
-                                    }
-                                }
-                            }
-                            .padding()
-                        }
-                    }
-                    
-                    if currentLevel > 1 {
-                        HStack(spacing: 20) {
-                            Button("Remove Selected") {
-                                if let index = selectedPlanetIndex {
-                                    planets.remove(at: index)
-                                    selectedPlanetIndex = nil
-                                }
-                            }
-                            .buttonStyle(SpaceButtonStyle(color: .red, isDisabled: selectedPlanetIndex == nil))
+                            .disabled(currentLevel == 1)
                             
-                            Button("Remove Last") {
-                                planets.removeLast()
+                            Spacer()
+                            
+                            Text("Level \(currentLevel)")
+                                .font(.system(size: 32, weight: .bold))
+                            
+                            Spacer()
+                            
+                            Button(action: { changeLevel(decrease: false) }) {
+                                Image(systemName: "chevron.right.circle.fill")
+                                    .font(.system(size: 24))
                             }
-                            .buttonStyle(SpaceButtonStyle(color: .orange, isDisabled: planets.isEmpty))
+                            .disabled(currentLevel >= maxLevelReached)
+                        }
+                        .foregroundColor(.white)
+                        .padding(.horizontal)
+                        
+                        levelInstructions
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 60)
+                        
+                        // Available planets
+                        VStack(alignment: .leading) {
+                            Text("Available Planets:")
+                                .font(.title3)
+                                .foregroundColor(.white)
+                            
+                            ScrollView(.horizontal, showsIndicators: false) {
+                                HStack(spacing: 15) {
+                                    ForEach(availablePlanets.filter { !selectedAvailablePlanets.contains($0.id) }) { planet in
+                                        PlanetCard(
+                                            name: planet.name,
+                                            imageName: planet.image,
+                                            isSelected: false,
+                                            size: 80
+                                        )
+                                        .onTapGesture {
+                                            handlePlanetTap(planet)
+                                        }
+                                    }
+                                }
+                            }
+                            .padding(.horizontal)
+                        }
+                        .frame(height: 140)
+                        
+                        // Current array
+                        VStack(alignment: .leading) {
+                            Text("Your Solar System:")
+                                .font(.title3)
+                                .foregroundColor(.white)
+                            
+                            ScrollView(.horizontal, showsIndicators: false) {
+                                HStack(spacing: 15) {
+                                    ForEach(Array(planets.enumerated()), id: \.element.id) { index, planet in
+                                        PlanetCard(
+                                            name: planet.name,
+                                            imageName: planet.image,
+                                            isSelected: selectedPlanetIndex == index,
+                                            size: 80
+                                        )
+                                        .onTapGesture {
+                                            handleSelectionTap(at: index)
+                                        }
+                                    }
+                                }
+                            }
+                            .padding(.horizontal)
+                        }
+                        .frame(height: 140)
+                        
+                        // Buttons
+                        VStack(spacing: 10) {
+                            if currentLevel > 1 {
+                                HStack(spacing: 15) {
+                                    Button("Remove Selected") {
+                                        withAnimation {
+                                            handleRemoveSelected()
+                                        }
+                                    }
+                                    .buttonStyle(SpaceButtonStyle(color: .red, isDisabled: selectedPlanetIndex == nil))
+                                    
+                                    Button("Remove Last") {
+                                        withAnimation {
+                                            handleRemoveLast()
+                                        }
+                                    }
+                                    .buttonStyle(SpaceButtonStyle(color: .orange, isDisabled: planets.isEmpty))
+                                }
+                            }
+                            
+                            Button("Check Level") {
+                                checkLevelCompletion()
+                            }
+                            .buttonStyle(SpaceButtonStyle(color: .green, isDisabled: planets.isEmpty))
+                            
+                            if showHint {
+                                Text("Hint: \(getCurrentLevelHint())")
+                                    .foregroundColor(.yellow)
+                                    .padding()
+                            }
+                            
+                            Button("Need Help?") {
+                                showHint.toggle()
+                            }
+                            .buttonStyle(SpaceButtonStyle(color: .blue, isDisabled: false))
                         }
                     }
-                    
-                    if showHint {
-                        Text("Hint: \(getCurrentLevelHint())")
-                            .foregroundColor(.yellow)
-                            .padding()
-                    }
-                    
-                    Button("Need Help?") {
-                        showHint.toggle()
-                    }
-                    .buttonStyle(SpaceButtonStyle(color: .blue, isDisabled: false))
+                    .padding()
                 }
-                .padding()
                 
                 if showSuccess {
                     LevelMessageView(
@@ -129,38 +168,26 @@ struct PlanetOption: Identifiable, Equatable {
                         buttonText: "Next Level",
                         buttonAction: {
                             advanceToNextLevel()
-                        }
-                    },
-                    color: .green
-                )
-            }
-            
-            if showError {
-                Color.black.opacity(0.5)
-                    .ignoresSafeArea()
-                    .transition(.opacity)
+                        },
+                        color: .green
+                    )
+                }
                 
-                LevelMessageView(
-                    title: "Oops!",
-                    message: errorMessage,
-                    buttonText: "Try Again",
-                    buttonAction: {
-                        showError = false
-                    },
-                    color: .red
-                )
-            }
-            
-            if showResetAlert {
-                Color.black.opacity(0.5)
-                    .ignoresSafeArea()
-                    .transition(.opacity)
+                if showError {
+                    LevelMessageView(
+                        title: "Oops!",
+                        message: errorMessage,
+                        buttonText: "Try Again",
+                        buttonAction: {
+                            showError = false
+                        },
+                        color: .red
+                    )
+                }
             }
         }
-    }
-    
-    private var levelInstructions: some View {
-        VStack {
+        
+        private var levelInstructions: some View {
             Text(getCurrentLevelInstructions())
                 .foregroundColor(.white)
                 .multilineTextAlignment(.center)
@@ -211,6 +238,7 @@ struct PlanetOption: Identifiable, Equatable {
         private func handlePlanetTap(_ planet: PlanetOption) -> Void {
             withAnimation {
                 addPlanetToSystem(planet)
+                selectedAvailablePlanets.insert(planet.id)
             }
         }
         
@@ -221,19 +249,12 @@ struct PlanetOption: Identifiable, Equatable {
         }
         
         private func addPlanetToSystem(_ planet: PlanetOption) -> Void {
-            if validateAddition(planet) {
-                // Creamos una nueva instancia del planeta para evitar problemas de referencia
-                let newPlanet = PlanetOption(
-                    name: planet.name,
-                    image: planet.image,
-                    order: planet.order
-                )
-                planets.append(newPlanet)
-                checkLevelCompletion()
-            } else {
-                errorMessage = "That's not the right planet for this step!"
-                showError = true
-            }
+            let newPlanet = PlanetOption(
+                name: planet.name,
+                image: planet.image,
+                order: planet.order
+            )
+            planets.append(newPlanet)
         }
         
         private func selectPlanet(at index: Int) -> Void {
@@ -242,27 +263,38 @@ struct PlanetOption: Identifiable, Equatable {
             }
         }
         
-        private func validateAddition(_ planet: PlanetOption) -> Bool {
-            switch currentLevel {
-            case 1:
-                return planet.name == "Sun" && planets.isEmpty
-            case 2:
-                if planets.isEmpty {
-                    return planet.name == "Sun"
-                }
-                return planets.count == 1 && planet.name == "Earth" && planets[0].name == "Sun"
-            case 3:
-                if planets.isEmpty {
-                    return planet.name == "Sun"
-                }
-                let expectedOrder = [0, 1, 2, 3, 4]
-                return planets.count < expectedOrder.count && planet.order == expectedOrder[planets.count]
-            default:
-                if planets.isEmpty {
-                    return planet.name == "Sun"
-                }
-                return planets.count < 9 && planet.order == planets.count
+        private func changeLevel(decrease: Bool) {
+            let newLevel = decrease ? currentLevel - 1 : currentLevel + 1
+            if newLevel >= 1 && newLevel <= maxLevelReached {
+                currentLevel = newLevel
+                resetLevel()
             }
+        }
+        
+        private func resetLevel() {
+            let allPlanets = [
+                PlanetOption(name: "Sun", image: "sun", order: 0),
+                PlanetOption(name: "Mercury", image: "mercury", order: 1),
+                PlanetOption(name: "Venus", image: "venus", order: 2),
+                PlanetOption(name: "Earth", image: "earth", order: 3),
+                PlanetOption(name: "Mars", image: "mars", order: 4),
+                PlanetOption(name: "Jupiter", image: "jupiter", order: 5),
+                PlanetOption(name: "Saturn", image: "saturn", order: 6),
+                PlanetOption(name: "Uranus", image: "uranus", order: 7),
+                PlanetOption(name: "Neptune", image: "neptune", order: 8)
+            ]
+            planets = []
+            selectedPlanetIndex = nil
+            showSuccess = false
+            showHint = false
+            availablePlanets = getLevelPlanets(level: currentLevel, allPlanets: allPlanets)
+            selectedAvailablePlanets.removeAll()
+        }
+        
+        private func advanceToNextLevel() {
+            currentLevel += 1
+            maxLevelReached = max(maxLevelReached, currentLevel)
+            resetLevel()
         }
         
         private func checkLevelCompletion() {
@@ -287,28 +319,34 @@ struct PlanetOption: Identifiable, Equatable {
             
             if isCorrect {
                 showSuccess = true
+            } else {
+                errorMessage = "That's not the correct arrangement for this level!"
+                showError = true
             }
         }
         
-        private func advanceToNextLevel() {
-            let allPlanets = [
-                PlanetOption(name: "Sun", image: "sun", order: 0),
-                PlanetOption(name: "Mercury", image: "mercury", order: 1),
-                PlanetOption(name: "Venus", image: "venus", order: 2),
-                PlanetOption(name: "Earth", image: "earth", order: 3),
-                PlanetOption(name: "Mars", image: "mars", order: 4),
-                PlanetOption(name: "Jupiter", image: "jupiter", order: 5),
-                PlanetOption(name: "Saturn", image: "saturn", order: 6),
-                PlanetOption(name: "Uranus", image: "uranus", order: 7),
-                PlanetOption(name: "Neptune", image: "neptune", order: 8)
-            ]
-            
-            currentLevel += 1
-            planets = []
-            selectedPlanetIndex = nil
-            showSuccess = false
-            showHint = false
-            availablePlanets = getLevelPlanets(level: currentLevel, allPlanets: allPlanets)
+        private func handleRemoveSelected() {
+            if let index = selectedPlanetIndex {
+                let removedPlanet = planets[index]
+                planets.remove(at: index)
+                selectedPlanetIndex = nil
+                
+                if !availablePlanets.contains(where: { $0.id == removedPlanet.id }) {
+                    availablePlanets.append(removedPlanet)
+                }
+                selectedAvailablePlanets.remove(removedPlanet.id)
+            }
+        }
+        
+        private func handleRemoveLast() {
+            if let removedPlanet = planets.last {
+                planets.removeLast()
+                
+                if !availablePlanets.contains(where: { $0.id == removedPlanet.id }) {
+                    availablePlanets.append(removedPlanet)
+                }
+                selectedAvailablePlanets.remove(removedPlanet.id)
+            }
         }
     }
 
@@ -316,6 +354,7 @@ struct PlanetOption: Identifiable, Equatable {
         let name: String
         let imageName: String
         let isSelected: Bool
+        let size: CGFloat
         
         var body: some View {
             VStack {
@@ -325,16 +364,16 @@ struct PlanetOption: Identifiable, Equatable {
                     .frame(width: 100, height: 100)
                     .overlay(
                         Circle()
-                            .stroke(validationColor, lineWidth: 3)
+                            .stroke(isSelected ? Color.orange : Color.clear, lineWidth: 3)
                     )
                 
                 Text(name)
                     .font(.system(size: 16, weight: .medium))
                     .foregroundColor(.white)
             }
-            .padding()
+            .padding(8)
             .background(
-                RoundedRectangle(cornerRadius: 15)
+                RoundedRectangle(cornerRadius: 12)
                     .fill(Color.black.opacity(0.3))
             )
         }
